@@ -368,7 +368,7 @@ textarea.paste{width:100%;min-height:180px;border-radius:14px;border:0;backgroun
 
 <script>
 'use strict';
-const VER='1.2';
+const VER='1.3';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const el=html=>{const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstElementChild};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -612,16 +612,15 @@ const rate=c=>c==='TJS'?1:(+S.set.rates[c]||0);
 /* ---------- тактильный отклик ---------- */
 // iOS 18+: системный «тик» от переключателя <input switch>; Android: vibrate
 const Haptic=(()=>{
-  let lbl=null;
   const ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  function mk(){if(lbl)return lbl;const id='hpt';const i=document.createElement('input');i.type='checkbox';i.id=id;i.setAttribute('switch','');
-    lbl=document.createElement('label');lbl.htmlFor=id;
-    const w=document.createElement('div');w.style.cssText='position:fixed;left:-200px;top:-200px;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none';
-    w.append(i,lbl);document.body.appendChild(w);return lbl}
+  // iOS отдаёт тик только на клик по свежему <label><input switch></label> внутри касания (pointerup/click, не pointerdown)
+  const tick=()=>{const l=document.createElement('label');l.ariaHidden='true';l.style.display='none';
+    const i=document.createElement('input');i.type='checkbox';i.setAttribute('switch','');l.appendChild(i);
+    document.head.appendChild(l);l.click();document.head.removeChild(l)};
   return function(n=1){
     if(!S.set.haptic)return;
     try{if(!ios&&navigator.vibrate){navigator.vibrate(n>1?[10,40,14]:8);return}
-      const l=mk();l.click();if(n>1)setTimeout(()=>l.click(),90)}catch(e){}
+      tick();if(n>1)setTimeout(tick,110)}catch(e){}
   };
 })();
 
@@ -664,10 +663,11 @@ function key(k){
 // клавиатура: мгновенный отклик на касание
 (function(){
   const pad=$('#pad');let lp=null;
-  pad.addEventListener('pointerdown',e=>{const b=e.target.closest('.k');if(!b)return;e.preventDefault();b.classList.add('pr');if(b.dataset.k!=='ok')Haptic();
+  pad.addEventListener('pointerdown',e=>{const b=e.target.closest('.k');if(!b)return;e.preventDefault();b.classList.add('pr');
     const k=b.dataset.k;
     if(k==='back'){lp=setTimeout(()=>{EX='';updAmt();lp='done'},450)}else key(k)});
-  const up=e=>{$$('.k.pr',pad).forEach(b=>b.classList.remove('pr'));
+  const up=e=>{const was=$('.k.pr',pad);$$('.k.pr',pad).forEach(b=>b.classList.remove('pr'));
+    if(e.type==='pointerup'&&was)Haptic(was.dataset.k==='ok'?2:1);
     if(lp&&lp!=='done'){clearTimeout(lp);const b=e.target.closest&&e.target.closest('.k');if(b&&b.dataset.k==='back')key('back')}lp=null};
   pad.addEventListener('pointerup',up);pad.addEventListener('pointercancel',up);pad.addEventListener('pointerleave',up);
   pad.addEventListener('contextmenu',e=>e.preventDefault());
@@ -736,7 +736,7 @@ $('#sugg').onclick=e=>{
   if(s&&s.lastAmt){EX=String(s.lastAmt);if(s.lastCur&&s.lastCur!=='TJS'&&!D.cur&&rate(s.lastCur))D.cur=s.lastCur}
   txt.blur();updAmt();
 };
-function shake(){Haptic(2);const b=$('#amtBox');b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake')}
+function shake(){const b=$('#amtBox');b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake')}
 function resetForm(){
   EX='';txt.value='';$('#txtClr').hidden=true;D={cat:null,ppl:new Set(),date:null,cur:null,note:''};
   $('#details').hidden=true;$('#sumLine').classList.remove('open');updAmt();
@@ -753,7 +753,6 @@ async function commit(){
   let catId=D.cat||(p.catName&&findCat(p.catName))||guessCat(p.text).id||'other';
   const ids=new Set(D.ppl);for(const n of p.ppl)ids.add((await ensurePerson(n)).id);
   let ts=D.date||Date.now();if(!D.date&&p.dayShift)ts+=p.dayShift*DAY;
-  Haptic(2);
   const e={id:uid(),ts,text:p.text,cat:catId,ppl:[...ids],amt:r2(amount*rate(cur)),orig:amount,cur,note:D.note||'',cr:Date.now()};
   txt.blur();
   await addEntry(e);
