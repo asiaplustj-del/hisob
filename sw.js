@@ -1,5 +1,5 @@
 // Hisob — офлайн-кэш. Новая версия подтягивается в фоне и включается при следующем запуске.
-const CACHE = 'hisob-v1';
+const CACHE = 'hisob-v2';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
