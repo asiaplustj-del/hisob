@@ -368,7 +368,7 @@ textarea.paste{width:100%;min-height:180px;border-radius:14px;border:0;backgroun
 
 <script>
 'use strict';
-const VER='1.1';
+const VER='1.2';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const el=html=>{const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstElementChild};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -430,7 +430,7 @@ const DEF_CATS=[
 const STARTER=['вода','хлеб','такси','обед','продукты','кофе','интернет','бензин'];
 
 /* ---------- состояние ---------- */
-const S={entries:[],cats:[],ppl:[],set:{theme:'dark',budget:0,rates:{USD:0,RUB:0,EUR:0},lastBackup:0,curs:['USD','RUB','EUR']}};
+const S={entries:[],cats:[],ppl:[],set:{theme:'dark',haptic:true,budget:0,rates:{USD:0,RUB:0,EUR:0},lastBackup:0,curs:['USD','RUB','EUR']}};
 let CAT={},PPL={};
 const cat=id=>CAT[id]||CAT.other||{id:'other',name:'Прочее',emoji:'📦',color:'#8E8E93'};
 const person=id=>PPL[id];
@@ -609,6 +609,22 @@ async function ensurePerson(name){
 }
 const rate=c=>c==='TJS'?1:(+S.set.rates[c]||0);
 
+/* ---------- тактильный отклик ---------- */
+// iOS 18+: системный «тик» от переключателя <input switch>; Android: vibrate
+const Haptic=(()=>{
+  let lbl=null;
+  const ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  function mk(){if(lbl)return lbl;const id='hpt';const i=document.createElement('input');i.type='checkbox';i.id=id;i.setAttribute('switch','');
+    lbl=document.createElement('label');lbl.htmlFor=id;
+    const w=document.createElement('div');w.style.cssText='position:fixed;left:-200px;top:-200px;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none';
+    w.append(i,lbl);document.body.appendChild(w);return lbl}
+  return function(n=1){
+    if(!S.set.haptic)return;
+    try{if(!ios&&navigator.vibrate){navigator.vibrate(n>1?[10,40,14]:8);return}
+      const l=mk();l.click();if(n>1)setTimeout(()=>l.click(),90)}catch(e){}
+  };
+})();
+
 /* ---------- экран «Расход» ---------- */
 let EX='';                         // выражение на клавиатуре
 let D={cat:null,ppl:new Set(),date:null,cur:null,note:''};
@@ -648,7 +664,7 @@ function key(k){
 // клавиатура: мгновенный отклик на касание
 (function(){
   const pad=$('#pad');let lp=null;
-  pad.addEventListener('pointerdown',e=>{const b=e.target.closest('.k');if(!b)return;e.preventDefault();b.classList.add('pr');
+  pad.addEventListener('pointerdown',e=>{const b=e.target.closest('.k');if(!b)return;e.preventDefault();b.classList.add('pr');if(b.dataset.k!=='ok')Haptic();
     const k=b.dataset.k;
     if(k==='back'){lp=setTimeout(()=>{EX='';updAmt();lp='done'},450)}else key(k)});
   const up=e=>{$$('.k.pr',pad).forEach(b=>b.classList.remove('pr'));
@@ -709,7 +725,7 @@ $('#txtClr').addEventListener('mousedown',e=>e.preventDefault());
 $('#txtClr').onclick=()=>{txt.value='';$('#txtClr').hidden=true;updAmt()};
 $('#sugg').addEventListener('mousedown',e=>e.preventDefault());
 $('#sugg').onclick=e=>{
-  const b=e.target.closest('.chip');if(!b)return;
+  const b=e.target.closest('.chip');if(!b)return;Haptic();
   if(b.dataset.at){txt.value=txt.value.replace(/@([\p{L}\p{N}_.-]*)$/u,'@'+b.dataset.at.replace(/\s/g,'_')+' ');updAmt();return}
   const t=b.dataset.t,s=IDX.get(norm(t)),p=parseText(txt.value);
   let a=evalExpr(EX);
@@ -720,7 +736,7 @@ $('#sugg').onclick=e=>{
   if(s&&s.lastAmt){EX=String(s.lastAmt);if(s.lastCur&&s.lastCur!=='TJS'&&!D.cur&&rate(s.lastCur))D.cur=s.lastCur}
   txt.blur();updAmt();
 };
-function shake(){const b=$('#amtBox');b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake')}
+function shake(){Haptic(2);const b=$('#amtBox');b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake')}
 function resetForm(){
   EX='';txt.value='';$('#txtClr').hidden=true;D={cat:null,ppl:new Set(),date:null,cur:null,note:''};
   $('#details').hidden=true;$('#sumLine').classList.remove('open');updAmt();
@@ -737,6 +753,7 @@ async function commit(){
   let catId=D.cat||(p.catName&&findCat(p.catName))||guessCat(p.text).id||'other';
   const ids=new Set(D.ppl);for(const n of p.ppl)ids.add((await ensurePerson(n)).id);
   let ts=D.date||Date.now();if(!D.date&&p.dayShift)ts+=p.dayShift*DAY;
+  Haptic(2);
   const e={id:uid(),ts,text:p.text,cat:catId,ppl:[...ids],amt:r2(amount*rate(cur)),orig:amount,cur,note:D.note||'',cr:Date.now()};
   txt.blur();
   await addEntry(e);
@@ -1100,6 +1117,7 @@ function openSettings(){
     <div class="list">${S.set.curs.map(c=>`<label class="li"><span class="grow">1 ${c} =</span><input data-rate="${c}" inputmode="decimal" placeholder="курс" value="${S.set.rates[c]?String(S.set.rates[c]).replace('.',','):''}"><span class="val">смн</span></label>`).join('')}</div>
     <div class="note">Траты в валюте пересчитываются в сомони по курсу на момент записи. Сумма в валюте тоже сохраняется.</div>
     <div class="sec">Оформление</div>
+    <div class="list" style="margin-bottom:10px"><label class="li"><span class="grow">Вибро при нажатии</span><input type="checkbox" switch id="sHap" style="width:auto"${S.set.haptic?' checked':''}></label></div>
     <div class="seg" id="sTheme" style="margin:0"><button data-t="dark">Тёмная</button><button data-t="light">Светлая</button><button data-t="auto">Как в системе</button></div>
     <div class="sec">Категории</div>
     <div class="list" id="sCats"></div>
@@ -1112,6 +1130,7 @@ function openSettings(){
   openSheet('Настройки',body);
   $('#sBud',body).onchange=ev=>{S.set.budget=Math.max(0,parseFloat(ev.target.value.replace(/\s/g,'').replace(',','.'))||0);saveSet()};
   $$('[data-rate]',body).forEach(i=>i.onchange=()=>{S.set.rates[i.dataset.rate]=parseFloat(i.value.replace(',','.'))||0;saveSet()});
+  $('#sHap',body).onchange=ev=>{S.set.haptic=ev.target.checked;saveSet();Haptic()};
   $('#sTheme',body).onclick=ev=>{const b=ev.target.closest('button');if(!b)return;S.set.theme=b.dataset.t;saveSet();applyTheme();$$('#sTheme button',body).forEach(x=>x.classList.toggle('on',x===b))};
   body.onclick=async ev=>{
     const c=ev.target.closest('[data-cat]');if(c){openCat(c.dataset.cat,rcats);return}
