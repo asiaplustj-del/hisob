@@ -15,4 +15,7 @@ h1{font-size:22px;margin:0 0 6px}p{color:#aaa;font-size:14px;margin:0 0 16px}
 <div class="k"><span>F</span><input type="checkbox" switch style="position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:.01;z-index:3"></div>
 <label class="k"><span>G</span><input type="checkbox" switch style="position:absolute;right:14px;clip-path:inset(50%)"></label>
 <label class="k"><div class="face" style="background:rgba(35,35,41,.97)"></div><span>H</span><input type="checkbox" switch style="position:absolute;right:14px;z-index:0"></label>
+<label class="k" id="ki"><span>I</span><input type="checkbox" switch style="position:absolute;left:50%;top:50%;width:2px;height:2px;opacity:.01;pointer-events:none;margin:0"></label>
+<label class="k" id="kj"><span>J</span><input type="checkbox" switch style="position:absolute;left:50%;top:50%;width:2px;height:2px;opacity:.01;pointer-events:none;margin:0"></label>
+<script>document.getElementById('ki').addEventListener('pointerdown',e=>e.preventDefault());document.getElementById('kj').addEventListener('mousedown',e=>e.preventDefault());</script>
 </body></html>

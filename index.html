@@ -372,7 +372,7 @@ textarea.paste{width:100%;min-height:180px;border-radius:14px;border:0;backgroun
 
 <script>
 'use strict';
-const VER='1.4';
+const VER='1.5';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const el=html=>{const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstElementChild};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -661,7 +661,7 @@ function key(k){
 // клавиатура: мгновенный отклик на касание
 (function(){
   const pad=$('#pad');let lp=null;
-  pad.addEventListener('pointerdown',e=>{const b=e.target.closest('.k');if(!b)return;e.preventDefault();b.classList.add('pr');
+  pad.addEventListener('pointerdown',e=>{const b=e.target.closest('.k');if(!b)return;b.classList.add('pr');
     const k=b.dataset.k;
     if(k==='back'){lp=setTimeout(()=>{EX='';updAmt();lp='done'},450)}else key(k)});
   const up=e=>{const was=$('.k.pr',pad);$$('.k.pr',pad).forEach(b=>b.classList.remove('pr'));
@@ -722,7 +722,6 @@ txt.addEventListener('blur',()=>{setTimeout(()=>{if(document.activeElement!==txt
 txt.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if(curAmount()>0)commit();else{txt.blur();shake()}}});
 $('#txtClr').addEventListener('mousedown',e=>e.preventDefault());
 $('#txtClr').onclick=()=>{txt.value='';$('#txtClr').hidden=true;updAmt()};
-$('#sugg').addEventListener('mousedown',e=>e.preventDefault());
 $('#sugg').onclick=e=>{
   if(e.target.matches('input.hx'))return;
   const b=e.target.closest('.chip');if(!b)return;Haptic();
