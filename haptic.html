@@ -1,0 +1,18 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>Тест вибро</title>
+<style>
+body{margin:0;background:#0E0E10;color:#fff;font:17px -apple-system,system-ui;padding:20px 16px 60px}
+h1{font-size:22px;margin:0 0 6px}p{color:#aaa;font-size:14px;margin:0 0 16px}
+.k{position:relative;display:flex;align-items:center;justify-content:center;height:64px;border-radius:16px;background:#232329;margin:10px 0;font-size:22px;font-weight:600;overflow:hidden;-webkit-user-select:none;user-select:none;cursor:pointer}
+.k span{position:relative;z-index:2;pointer-events:none}
+.face{position:absolute;inset:0;background:#232329;z-index:1;pointer-events:none}
+</style></head><body>
+<h1>Тест вибро</h1><p>Нажми каждую кнопку по 2–3 раза и напиши буквы, на которых есть отклик.</p>
+<label class="k"><span>A</span><input type="checkbox" switch style="position:absolute;right:14px"></label>
+<label class="k"><span>B</span><input type="checkbox" switch style="position:absolute;left:50%;top:50%;width:2px;height:2px;opacity:.01;pointer-events:none;margin:0"></label>
+<label class="k"><span>C</span><input type="checkbox" switch style="position:absolute;right:14px;opacity:.01"></label>
+<label class="k"><div class="face"></div><span>D</span><input type="checkbox" switch style="position:absolute;right:14px;z-index:0"></label>
+<label class="k"><span>E</span><input type="checkbox" switch style="position:absolute;right:14px;transform:scale(.05)"></label>
+<div class="k"><span>F</span><input type="checkbox" switch style="position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:.01;z-index:3"></div>
+<label class="k"><span>G</span><input type="checkbox" switch style="position:absolute;right:14px;clip-path:inset(50%)"></label>
+<label class="k"><div class="face" style="background:rgba(35,35,41,.97)"></div><span>H</span><input type="checkbox" switch style="position:absolute;right:14px;z-index:0"></label>
+</body></html>
